@@ -1,6 +1,6 @@
 /**
  * [INPUT]: 依赖宿主注入的 MessageChannel 与独立 App workspace scope
- * [OUTPUT]: 对外提供 App operation 与右侧 Agent 请求的 iframe SDK
+ * [OUTPUT]: 对外提供 App operation、平台素材选择与右侧 Agent 请求的 iframe SDK
  * [POS]: ui/src 的宿主通信边界；组件不直接读写 App SQLite 或执行本机命令
  * [PROTOCOL]: 变更时更新此头部，然后检查 README.md
  */

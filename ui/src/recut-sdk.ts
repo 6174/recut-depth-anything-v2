@@ -4,7 +4,7 @@
  * [POS]: ui/src 的宿主通信边界；组件不直接读写 App SQLite 或执行本机命令
  * [PROTOCOL]: 变更时更新此头部，然后检查 README.md
  */
-type RequestType = "state.query" | "background.call" | "agent.send";
+type RequestType = "state.query" | "background.call" | "agent.send" | "media.pick";
 let port: MessagePort | null = null;
 let sequence = 0;
 const pending = new Map<string, { resolve: (value: any) => void; reject: (reason: Error) => void }>();
@@ -39,5 +39,6 @@ export const recut = {
   state: { query: (name: string) => call("state.query", { name }) },
   background: { call: (name: string, input: Record<string, unknown> = {}) => call("background.call", { name, ...input }) },
   agent: { send: (prompt: string) => call("agent.send", { prompt }) },
+  media: { pick: (kinds: string[]) => call("media.pick", { kinds }) },
   events: { subscribe: (listener: (event: unknown) => void) => { const handler = (event: Event) => listener((event as CustomEvent).detail); window.addEventListener("recut-project-event", handler); return () => window.removeEventListener("recut-project-event", handler); } },
 };

@@ -13,4 +13,7 @@ dist/: `npm run build` 生成的运行时静态文件；manifest 指向该目录
 
 `main.tsx -> recut-sdk.ts -> Host MessageChannel -> background.js` 负责状态、安装、推理与保存；输入素材列表和上传仍通过 Recut 的素材库 HTTP API 获得，不访问本地文件系统。
 
+设计规范
+`src/style.css` 使用与主工作台一致的白色画布、品牌绿主命令、8px 以下圆角与紧凑工具面板；预览区可以占据大画布，其余控制保持可扫描的单列节奏。
+
 [PROTOCOL]: 变更时更新此头部，然后检查 README.md

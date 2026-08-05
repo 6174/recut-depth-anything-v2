@@ -1,3 +1,8 @@
+---
+name: depth-anything
+description: 对图片或视频执行深度估计并保存深度图结果。
+---
+
 # Depth Anything 执行约束
 
 此 App 只使用 `depth.status`、`depth.prepare`、`depth.install`、`depth.generate`、`depth.complete`、`depth.list` 和 `depth.save` 的公开契约。

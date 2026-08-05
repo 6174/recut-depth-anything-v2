@@ -164,8 +164,8 @@ function App() {
 
   const askAgent = async () => {
     setBusy("agent");
-    try { await recut.agent.send(`Depth Anything 本地依赖检查或安装失败。请检查并解决这个错误，然后告诉我可以如何继续：${status?.error || message}`); setMessage("诊断已发送到右侧 Codex。 "); }
-    catch (error) { setMessage(error instanceof Error ? error.message : "无法发送诊断请求。"); }
+    try { await recut.agent.compose(`Depth Anything 本地依赖检查或安装失败。请检查并解决这个错误，然后告诉我可以如何继续：${status?.error || message}`); setMessage("诊断已填入右侧 Agent 输入框；请确认后发送。 "); }
+    catch (error) { setMessage(error instanceof Error ? error.message : "无法准备诊断请求。"); }
     finally { setBusy(null); }
   };
 

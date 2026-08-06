@@ -1,6 +1,6 @@
 /*
  * [INPUT]: 依赖 Depth Anything 工作台的 HTML 结构与浏览器系统字体
- * [OUTPUT]: 对外提供紧凑、可扫描的独立应用视觉样式，包括应用内选择组件、历史预览和实时计时/日志底部标签页
+ * [OUTPUT]: 对外提供紧凑、可扫描的独立应用视觉样式，包括应用内选择组件、历史预览、任务停止和实时计时/日志底部标签页
  * [POS]: ui/src 的视觉边界；不承载状态、业务规则或宿主通信
  * [PROTOCOL]: 变更时更新此头部，然后检查 README.md
  */
@@ -72,6 +72,9 @@ h1 { margin-top: 7px; font-size: 26px; letter-spacing: 0; }
 .bottom-tabs button { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: #68736b; padding: 0 9px; font-size: 12px; font-weight: 700; }
 .bottom-tabs button[aria-selected="true"] { border-bottom-color: #28734c; color: #1e6947; }
 .bottom-tabs button span { border-radius: 9px; background: #e7ece7; color: #657168; padding: 1px 5px; font: 10px ui-monospace, SFMono-Regular, monospace; }
+.bottom-tabs .cancel-job { margin-left: auto; border: 1px solid #d8b5af; border-radius: 4px; color: #9f3428; }
+.bottom-tabs .cancel-job:hover { background: #fff0ed; }
+.bottom-tabs .cancel-job:disabled { cursor: wait; opacity: .6; }
 .bottom-panel-content { min-height: 156px; }
 .job-timer { display: inline-flex; align-items: center; gap: 6px; margin: 12px 16px 8px; color: #236e49; font: 700 11px ui-monospace, SFMono-Regular, monospace; }
 .history-header span { color: #7a837d; font: 11px ui-monospace, SFMono-Regular, monospace; }

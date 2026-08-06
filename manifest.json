@@ -56,6 +56,24 @@
       "inputSchema": { "type": "object", "required": ["id"], "properties": { "id": { "type": "string" } } }
     },
     {
+      "name": "depth.job",
+      "surfaces": ["api"],
+      "description": "读取最近尚未由界面确认的 Depth Anything 本地任务，包括持久化状态和启动日志。",
+      "inputSchema": { "type": "object", "properties": {} }
+    },
+    {
+      "name": "depth.resolve",
+      "surfaces": ["api"],
+      "description": "在界面已处理终态后确认 Depth Anything 本地任务，避免重连后显示过期执行状态。",
+      "inputSchema": { "type": "object", "required": ["id"], "properties": { "id": { "type": "string" } } }
+    },
+    {
+      "name": "depth.cancel",
+      "surfaces": ["api"],
+      "description": "停止当前正在运行的 Depth Anything 本地任务，并保留终态日志。",
+      "inputSchema": { "type": "object", "properties": {} }
+    },
+    {
       "name": "depth.save",
       "surfaces": ["api"],
       "description": "将用户明确选择的私有深度输出导入素材库。",

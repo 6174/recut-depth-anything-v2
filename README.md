@@ -13,7 +13,7 @@ Small 适合快速预览；Base 是默认平衡；Large 有更细的细节，对
 
 ## 本地依赖
 
-`manifest.json` 的 `runtime.python` 是唯一的环境声明：平台创建 venv、按 `python/requirements.lock` 安装 PyTorch、TorchVision、OpenCV 和 timm；`bootstrap.sh` 是不受产品约束的兜底脚本，本 App 用它浅克隆 [Depth Anything V2](https://github.com/DepthAnything/Depth-Anything-V2)。视频与图片路径都要求本机 `ffmpeg` 已可执行；视频逐帧推理先写入中间文件，再经 FFmpeg 转为浏览器可播放的 H.264/yuv420p MP4；安装、下载和推理均作为可取消任务运行，实时 stdout/stderr 与逐帧进度会显示在界面和项目事件流中，错误可直接交给右侧 Codex 处理。
+`manifest.json` 的 `runtime.python` 是唯一的环境声明：平台创建 venv、按 `python/requirements.lock` 安装 PyTorch、TorchVision、OpenCV 和 timm；`bootstrap.sh` 是不受产品约束的兜底脚本，本 App 用它浅克隆 [Depth Anything V2](https://github.com/DepthAnything/Depth-Anything-V2)。视频与图片路径都要求本机 `ffmpeg` 已可执行；视频逐帧推理先写入中间文件，再经 FFmpeg 转为浏览器可播放的 H.264/yuv420p MP4；安装、下载和推理均作为可取消任务运行，模型下载从开始、每 5% 到完成均输出 stdout，视频逐帧进度和错误同样显示在界面和项目事件流中，错误可直接交给右侧 Codex 处理。
 
 ## 数据边界
 
@@ -37,7 +37,7 @@ ui/ -> background.js -> ctx.python / ctx.shell -> ShellJobManager -> python/dept
 用户点击保存 -> ctx.media.importFile -> 素材库 Asset
 ```
 
-`background.js` 是唯一业务入口。它把素材库输入 materialize 到私有目录、提交 Python Job、保存输出记录；它绝不在生成成功时导入素材库。`python/depth_runner.py` 不管理 venv、pip 或官方仓库，不了解 App SQLite 或素材库，只负责模型状态、下载与推理。
+`background.js` 是唯一业务入口。它把素材库输入 materialize 到私有目录、提交 Python Job、保存输出记录，并在 App SQLite 保留一个活动任务及其持久化日志；界面重连后通过 `depth.job` 恢复，任务可以由 `depth.cancel` 停止，只有处理完终态才以 `depth.resolve` 清除。输出记录以任务终态驱动：只有成功生成且可预览的文件进入历史，失败、取消和失效记录不会让历史读取失败。任务记录显式归一化宿主 Goja 的 `ID/Status` 与 API 的 `id/status` 字段，避免空 job id 破坏日志回补。它绝不在生成成功时导入素材库。`python/depth_runner.py` 不管理 venv、pip 或官方仓库，不了解 App SQLite 或素材库，只负责模型状态、下载与推理。
 
 ## 开发
 

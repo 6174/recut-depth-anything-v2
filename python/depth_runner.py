@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 [INPUT]: 读取 RECUT_APP_FILES_DIR、RECUT_MODELS_DIR、Depth Anything V2 官方仓库、PyTorch、OpenCV 与 FFmpeg
-[OUTPUT]: 输出单行 JSON 状态；在 App 私有 files/outputs 中生成 PNG 或浏览器可预览的 H.264 MP4 深度预览，并实时报告视频帧进度
+[OUTPUT]: 输出单行 JSON 状态；实时报告模型下载字节进度和视频帧进度；在 App 私有 files/outputs 中生成 PNG 或浏览器可预览的 H.264 MP4 深度预览
 [POS]: depth-anything 的本地执行入口；依赖和模型固定到 .recut/models/depth-anything-v2，不写入素材库
 [PROTOCOL]: 变更时更新此头部，然后检查 README.md
 """
@@ -56,11 +56,44 @@ def emit(payload: dict, code: int = 0) -> None:
     raise SystemExit(code)
 
 
+def display_size(size: int) -> str:
+    if size < 1024 * 1024:
+        return f"{size / 1024:.1f} KiB"
+    return f"{size / (1024 * 1024):.1f} MiB"
+
+
 def download(url: str, target: Path) -> None:
     temporary = target.with_suffix(target.suffix + ".part")
-    with urllib.request.urlopen(url, timeout=60) as response, temporary.open("wb") as destination:
-        shutil.copyfileobj(response, destination)
-    temporary.replace(target)
+    temporary.unlink(missing_ok=True)
+    downloaded = 0
+    try:
+        with urllib.request.urlopen(url, timeout=60) as response, temporary.open("wb") as destination:
+            try:
+                total = int(response.headers.get("Content-Length", "0") or 0)
+            except ValueError:
+                total = 0
+            next_percent = 5
+            next_bytes = 8 * 1024 * 1024
+            size = display_size(total) if total else "大小未知"
+            print(f"[download] 开始下载 {target.name}（{size}）。", flush=True)
+            while chunk := response.read(1024 * 1024):
+                destination.write(chunk)
+                downloaded += len(chunk)
+                if total:
+                    percent = min(downloaded * 100 // total, 100)
+                    if percent >= next_percent or downloaded == total:
+                        print(f"[download] {target.name}：{percent}%（{display_size(downloaded)} / {display_size(total)}）。", flush=True)
+                        next_percent = min(percent + 5, 100)
+                elif downloaded >= next_bytes:
+                    print(f"[download] {target.name}：已下载 {display_size(downloaded)}。", flush=True)
+                    next_bytes = downloaded + 8 * 1024 * 1024
+        if total and downloaded != total:
+            raise RuntimeError(f"模型下载不完整：期望 {display_size(total)}，实际 {display_size(downloaded)}。")
+        temporary.replace(target)
+    except Exception:
+        temporary.unlink(missing_ok=True)
+        raise
+    print(f"[download] {target.name} 下载完成（{display_size(downloaded)}）。", flush=True)
 
 
 def install(selected: str) -> None:
@@ -72,7 +105,10 @@ def install(selected: str) -> None:
     checkpoint = root / "checkpoints" / f"depth_anything_v2_{encoder}.pth"
     checkpoint.parent.mkdir(parents=True, exist_ok=True)
     if not checkpoint.is_file():
+        print(f"[depth] 正在准备 {selected} 模型权重。", flush=True)
         download(url, checkpoint)
+    else:
+        print(f"[depth] {selected} 模型权重已存在，跳过下载。", flush=True)
     emit(state(root))
 
 
@@ -102,9 +138,11 @@ def infer(selected: str, style: str, kind: str, source_relative: str, output_rel
     checkpoint = root / "checkpoints" / f"depth_anything_v2_{encoder}.pth"
     if not current["ready"] or not checkpoint.is_file():
         emit({"ready": False, "error": current["error"] or f"Model {selected} has not been downloaded."}, 1)
+    print("[depth] 正在加载图像处理依赖。", flush=True)
     import cv2
     import torch
 
+    print(f"[depth] 正在加载 {selected} 深度模型。", flush=True)
     sys.path.insert(0, str(root / "repository"))
     from depth_anything_v2.dpt import DepthAnythingV2
 
@@ -122,11 +160,13 @@ def infer(selected: str, style: str, kind: str, source_relative: str, output_rel
         return cv2.cvtColor(normalized, cv2.COLOR_GRAY2BGR) if style == "grayscale" else cv2.applyColorMap(normalized, cv2.COLORMAP_INFERNO)
 
     if kind == "image":
+        print("[depth] 正在读取图片并计算深度图。", flush=True)
         image = cv2.imread(str(source))
         if image is None:
             emit({"ready": False, "error": "The selected image could not be read."}, 1)
         if not cv2.imwrite(str(output), render(image)):
             emit({"ready": False, "error": "Could not write the depth image."}, 1)
+        print("[depth] 图片深度预览已生成。", flush=True)
     else:
         video = cv2.VideoCapture(str(source))
         if not video.isOpened():

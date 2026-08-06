@@ -1,6 +1,6 @@
 /**
  * [INPUT]: 依赖 Recut SDK、Depth operation、平台素材选择器、素材库上传 HTTP 与 React 状态
- * [OUTPUT]: 对外提供简洁的环境安装、模型下载、平台素材挑选与预览、应用内选择组件、可打开的图像/视频预览、全量历史、实时计时/日志、任务停止和用户确认入库工作台
+ * [OUTPUT]: 对外提供简洁的环境安装、模型下载、平台素材挑选与预览、应用内选择组件、可打开的图像/视频预览、全量历史、实时计时/日志、任务停止和用户确认入库工作台；运行中的任务持续更新日志但尊重用户选定的底部标签
  * [POS]: depth-anything UI 编排层；仅在环境和选定模型就绪后开放推理，生成结果先留在 App 私有文件区
  * [PROTOCOL]: 变更时更新此头部，然后检查 README.md
  */
@@ -44,6 +44,16 @@ function App() {
   const [failure, setFailure] = useState("");
   const [cancelling, setCancelling] = useState(false);
   const finalizingJob = useRef<string | null>(null);
+  const bottomTabSelectedByUser = useRef(false);
+
+  const selectBottomTab = useCallback((tab: "history" | "logs") => {
+    bottomTabSelectedByUser.current = true;
+    setBottomTab(tab);
+  }, []);
+  const showLogsForNewJob = useCallback(() => {
+    bottomTabSelectedByUser.current = false;
+    setBottomTab("logs");
+  }, []);
 
   const refresh = useCallback(async (): Promise<RuntimeStatus | null> => {
     try {
@@ -69,7 +79,7 @@ function App() {
     if (!isValidActiveJob(job)) return;
     setLogs(job.logs);
     setElapsedSeconds(Math.floor((Date.now() - jobStartedAt(job.startedAt)) / 1000));
-    setBottomTab("logs");
+    if (!bottomTabSelectedByUser.current) setBottomTab("logs");
     setBusy(job.action);
     setActiveJob({ id: job.id, action: job.action, outputID: job.outputID, startedAt: jobStartedAt(job.startedAt), status: job.status, error: job.error });
   }, []);
@@ -143,7 +153,7 @@ function App() {
   const install = async () => {
     setBusy("install");
     setFailure("");
-    setBottomTab("logs");
+    showLogsForNewJob();
     setLogs([]);
     setMessage(`正在安装运行环境并下载 ${models.find((item) => item.id === model)?.label} 模型…`);
     try { const result = await recut.background.call("depth.install", { model }) as { job: ShellJob }; beginJob(result.job, "install"); setMessage(`正在下载 ${models.find((item) => item.id === model)?.label} 模型…`); }
@@ -153,7 +163,7 @@ function App() {
   const prepare = useCallback(async () => {
     setBusy("prepare");
     setFailure("");
-    setBottomTab("logs");
+    showLogsForNewJob();
     setLogs([]);
     setMessage("正在启动…");
     try { const result = await recut.background.call("depth.prepare") as { job: ShellJob }; beginJob(result.job, "prepare"); }
@@ -163,7 +173,7 @@ function App() {
   const generate = async () => {
     if (!assetId) return setMessage("先选择一张图片或一个视频素材。");
     setBusy("generate");
-    setBottomTab("logs");
+    showLogsForNewJob();
     setLogs([]);
     setMessage(sourceKind === "video" ? "正在逐帧计算深度图，视频处理会花更长时间。" : "正在生成深度图…");
     try { const result = await recut.background.call("depth.generate", { assetId, kind: sourceKind, model, style }) as { job: ShellJob; output: { id: string } }; beginJob(result.job, "generate", result.output.id); }
@@ -220,7 +230,7 @@ function App() {
   };
 
   if (!status?.ready) return <Setup autoPrepare={status !== null} busy={busy} elapsedSeconds={elapsedSeconds} failure={failure || (!status?.pending ? status?.error || "" : "")} logs={logs} message={message} onPrepare={() => void prepare()} onAskAgent={() => void askAgent()} />;
-  return <main className="app-shell"><header className="app-header"><div><p className="eyebrow">RECUT APP / LOCAL DEPTH</p><h1>Depth Anything</h1><p>将图片或视频转换为深度图。预览不会自动进入素材库。</p></div></header><section className="workspace"><div className="controls"><SectionTitle label="输入" title="选择素材" /><div className="segmented">{(["image", "video"] as SourceKind[]).map((kind) => <button className={sourceKind === kind ? "selected" : ""} disabled={busy !== null} key={kind} onClick={() => { setSourceKind(kind); setAssetId(""); setSelectedAsset(null); }} type="button">{kind === "image" ? <Image size={15} /> : <Video size={15} />}{kind === "image" ? "图片" : "视频"}</button>)}</div><p className="field-label">素材库</p><button className="secondary-button" disabled={busy !== null} onClick={() => void chooseSource()} type="button"><FolderOpen size={15} />{sourceAsset ? "更换素材" : `从素材库选择${sourceKind === "image" ? "图片" : "视频"}`}</button>{sourceAsset && <SelectedSource asset={sourceAsset} />}<label className="upload-control"><Upload size={15} />上传{sourceKind === "image" ? "图片" : "视频"}<input disabled={busy !== null} accept={`${sourceKind}/*`} onChange={(event) => void upload(event.target.files?.[0])} type="file" /></label><SectionTitle label="模型" title="本地权重" /><p className="field-label">模型尺寸</p><AppSelect ariaLabel="模型尺寸" disabled={busy !== null} onChange={setModel} options={models} value={model} />{readyModel ? <p className="model-ready"><Check size={14} />已下载</p> : <button className="secondary-button" disabled={busy !== null} onClick={() => void install()} type="button"><Download size={15} />下载此模型</button>}<SectionTitle label="输出" title="深度图样式" /><div className="segmented">{(["color", "grayscale"] as OutputStyle[]).map((item) => <button className={style === item ? "selected" : ""} disabled={busy !== null} key={item} onClick={() => setStyle(item)} type="button">{item === "color" ? "伪彩" : "灰度"}</button>)}</div><button className="primary-button" disabled={busy !== null || !assetId || !readyModel} onClick={() => void generate()} type="button">{busy === "generate" ? <LoaderCircle className="spin" size={16} /> : <Image size={16} />}{busy === "generate" ? "正在生成…" : "生成深度图"}</button></div><OutputPanel output={currentOutput} busy={busy} onSave={save} /></section><BottomPanel activeTab={bottomTab} cancelling={cancelling} elapsedSeconds={elapsedSeconds} logs={logs} outputs={outputs} busy={busy} onCancel={() => void cancel()} onPreview={setPreviewOutput} onSave={save} onTabChange={setBottomTab} /><p className="status" role="status">{message}</p>{previewOutput && <PreviewDialog output={previewOutput} onClose={() => setPreviewOutput(null)} />}</main>;
+  return <main className="app-shell"><header className="app-header"><div><p className="eyebrow">RECUT APP / LOCAL DEPTH</p><h1>Depth Anything</h1><p>将图片或视频转换为深度图。预览不会自动进入素材库。</p></div></header><section className="workspace"><div className="controls"><SectionTitle label="输入" title="选择素材" /><div className="segmented">{(["image", "video"] as SourceKind[]).map((kind) => <button className={sourceKind === kind ? "selected" : ""} disabled={busy !== null} key={kind} onClick={() => { setSourceKind(kind); setAssetId(""); setSelectedAsset(null); }} type="button">{kind === "image" ? <Image size={15} /> : <Video size={15} />}{kind === "image" ? "图片" : "视频"}</button>)}</div><p className="field-label">素材库</p><button className="secondary-button" disabled={busy !== null} onClick={() => void chooseSource()} type="button"><FolderOpen size={15} />{sourceAsset ? "更换素材" : `从素材库选择${sourceKind === "image" ? "图片" : "视频"}`}</button>{sourceAsset && <SelectedSource asset={sourceAsset} />}<label className="upload-control"><Upload size={15} />上传{sourceKind === "image" ? "图片" : "视频"}<input disabled={busy !== null} accept={`${sourceKind}/*`} onChange={(event) => void upload(event.target.files?.[0])} type="file" /></label><SectionTitle label="模型" title="本地权重" /><p className="field-label">模型尺寸</p><AppSelect ariaLabel="模型尺寸" disabled={busy !== null} onChange={setModel} options={models} value={model} />{readyModel ? <p className="model-ready"><Check size={14} />已下载</p> : <button className="secondary-button" disabled={busy !== null} onClick={() => void install()} type="button"><Download size={15} />下载此模型</button>}<SectionTitle label="输出" title="深度图样式" /><div className="segmented">{(["color", "grayscale"] as OutputStyle[]).map((item) => <button className={style === item ? "selected" : ""} disabled={busy !== null} key={item} onClick={() => setStyle(item)} type="button">{item === "color" ? "伪彩" : "灰度"}</button>)}</div><button className="primary-button" disabled={busy !== null || !assetId || !readyModel} onClick={() => void generate()} type="button">{busy === "generate" ? <LoaderCircle className="spin" size={16} /> : <Image size={16} />}{busy === "generate" ? "正在生成…" : "生成深度图"}</button></div><OutputPanel output={currentOutput} busy={busy} onSave={save} /></section><BottomPanel activeTab={bottomTab} cancelling={cancelling} elapsedSeconds={elapsedSeconds} logs={logs} outputs={outputs} busy={busy} onCancel={() => void cancel()} onPreview={setPreviewOutput} onSave={save} onTabChange={selectBottomTab} /><p className="status" role="status">{message}</p>{previewOutput && <PreviewDialog output={previewOutput} onClose={() => setPreviewOutput(null)} />}</main>;
 }
 
 function SelectedSource({ asset }: { asset: MediaAsset }) { const source = `/v1/media/assets/${encodeURIComponent(asset.id)}/content`; return <figure className="source-preview"><div>{asset.kind === "image" ? <img alt={`已选素材：${asset.name}`} src={source} /> : <video controls preload="metadata" src={source} />}</div><figcaption><strong>{asset.name}</strong><span>{asset.kind === "image" ? "图片" : "视频"} · 已选择</span></figcaption></figure>; }

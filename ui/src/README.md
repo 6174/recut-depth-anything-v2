@@ -10,6 +10,6 @@ style.css: 紧凑的应用工作台视觉样式、应用内选择组件、历史
 
 依赖关系
 
-`main.tsx` 只通过 `recut-sdk.ts` 调用 App operation 与宿主 `media.pick`；平台在父页面展示带缩略图的完成态全局素材库，App 只接收稳定 `assetId` 并在自身工作台预览所选图片或视频。模型选择使用 App 内部 listbox 组件，不调用原生下拉菜单；启动页只展示当前任务的 stdout/stderr 和终态错误，不暴露额外运行时设置；状态优先刷新，历史读取失败不能阻塞进入模型选择；历史和本次预览共享同一完整输出集合，每张历史卡可打开图片或视频预览弹框；底部默认展示历史，准备环境、下载模型、生成深度图时自动切换到执行日志，并显示任务计时；`depth.job` 从持久记录重放实时事件接入前或刷新期间的状态、stdout/stderr，`depth.resolve` 只在终态已被成功处理后清理该记录；`depth.generate` 完成后通过 `depth.complete` 取得私有 `previewURL`；`depth.save` 是唯一可以产生素材库 Asset 的 UI 动作。
+`main.tsx` 只通过 `recut-sdk.ts` 调用 App operation 与宿主 `media.pick`；平台在父页面展示带缩略图的完成态全局素材库，App 只接收稳定 `assetId` 并在自身工作台预览所选图片或视频。模型选择使用 App 内部 listbox 组件，不调用原生下拉菜单；启动页只展示当前任务的 stdout/stderr 和终态错误，不暴露额外运行时设置；状态优先刷新，历史读取失败不能阻塞进入模型选择；历史和本次预览共享同一完整输出集合，每张历史卡可打开图片或视频预览弹框；底部默认展示历史，准备环境、下载模型、生成深度图时自动切换到执行日志，并显示任务计时；用户切换到底部任一标签后，运行中的任务同步只更新数据，不改变当前视图；`depth.job` 从持久记录重放实时事件接入前或刷新期间的状态、stdout/stderr，`depth.resolve` 只在终态已被成功处理后清理该记录；`depth.generate` 完成后通过 `depth.complete` 取得私有 `previewURL`；`depth.save` 是唯一可以产生素材库 Asset 的 UI 动作。
 
 [PROTOCOL]: 变更时更新此头部，然后检查 README.md

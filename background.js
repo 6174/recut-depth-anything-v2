@@ -58,7 +58,7 @@ function resolveTrackedJob(ctx, record, job) {
 function ensureNoActiveJob(ctx) {
   ensureSchema(ctx);
   const existing = trackedJob(ctx);
-  if (existing && isActiveJob(existing.status)) throw new Error("Depth Anything 已有任务正在执行，请等待完成或先取消。");
+  if (existing && isActiveJob(existing.status)) throw new Error("深度图已有任务正在执行，请等待完成或先取消。");
   if (existing) ctx.sqlite.execute("update depth_jobs set resolved_at = ? where job_id = ?", [new Date().toISOString(), existing.id]);
 }
 

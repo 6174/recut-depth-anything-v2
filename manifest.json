@@ -29,24 +29,24 @@
     {
       "name": "depth.install",
       "surfaces": ["api", "mcp"],
-      "description": "安装深度图运行依赖，并下载用户选择的模型到 .recut/models/depth-anything-v2。",
+      "description": "安装深度图运行依赖，并下载用户选择的模型到 .recut/models/depth-anything-v2。异步提交，立即返回 job；用平台 recut.job.status / recut.job.wait 轮询终态。",
       "inputSchema": { "type": "object", "required": ["model"], "properties": { "model": { "type": "string", "enum": ["small", "base", "large"] } } }
     },
     {
       "name": "depth.prepare",
-      "surfaces": ["api"],
-      "description": "自动安装深度图的 Python 运行依赖和官方代码，不下载模型权重。",
+      "surfaces": ["api", "mcp"],
+      "description": "自动安装深度图的 Python 运行依赖和官方代码，不下载模型权重。异步提交，立即返回 job；用平台 recut.job.status / recut.job.wait 轮询终态。",
       "inputSchema": { "type": "object", "properties": {} }
     },
     {
       "name": "depth.generate",
-      "surfaces": ["api"],
-      "description": "把一个图片或视频素材复制到私有工作目录并生成深度预览，不会保存到素材库。",
+      "surfaces": ["api", "mcp"],
+      "description": "把一个图片或视频素材复制到私有工作目录并生成深度预览，不会保存到素材库。异步提交，立即返回 job 与 output.id；用平台 recut.job.status / recut.job.wait 轮询，完成后用 depth.list 读取或 depth.save 入库。",
       "inputSchema": { "type": "object", "required": ["assetId", "kind", "model", "style"], "properties": { "assetId": { "type": "string" }, "kind": { "type": "string", "enum": ["image", "video"] }, "model": { "type": "string", "enum": ["small", "base", "large"] }, "style": { "type": "string", "enum": ["color", "grayscale"] } } }
     },
     {
       "name": "depth.list",
-      "surfaces": ["api"],
+      "surfaces": ["api", "mcp"],
       "description": "读取尚未导入或已导入素材库的深度图输出记录。",
       "inputSchema": { "type": "object", "properties": {} }
     },
@@ -76,8 +76,8 @@
     },
     {
       "name": "depth.save",
-      "surfaces": ["api"],
-      "description": "将用户明确选择的私有深度输出导入素材库。",
+      "surfaces": ["api", "mcp"],
+      "description": "将用户明确选择的私有深度输出导入素材库，返回真实 assetId。",
       "inputSchema": { "type": "object", "required": ["id"], "properties": { "id": { "type": "string" } } }
     }
   ]

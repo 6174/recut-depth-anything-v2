@@ -16,6 +16,17 @@ function value(input, name) { return String(input[name] || "").trim(); }
 function model(input) { const selected = value(input, "model"); if (!MODELS[selected]) throw new Error("model must be small, base, or large"); return selected; }
 function outputID() { return `${Date.now()}-${Math.random().toString(16).slice(2)}`; }
 
+function messages(locale) {
+  const zh = locale !== "en";
+  return {
+    activeJobBusy: zh ? "深度图已有任务正在执行，请等待完成或先取消。" : "A depth task is already running; wait for it to finish or cancel it first.",
+    jobUnrecoverable: (detail) => zh ? `任务记录不可恢复：${detail}` : `Job record is unrecoverable: ${detail}`,
+    jobStatusUnknown: (status) => zh ? `任务状态不可识别：${status}` : `Unknown job status: ${status}`,
+    startFailed: zh ? "无法启动深度任务。" : "Unable to start the depth task.",
+    previewMissing: zh ? "深度预览文件已丢失。" : "The depth preview file is missing.",
+  };
+}
+
 function ensureSchema(ctx) {
   ctx.sqlite.execute("create table if not exists depth_outputs (id text primary key, asset_id text not null, kind text not null, model text not null, style text not null, file_path text not null, mime_type text not null, saved_asset_id text not null default '', created_at text not null, job_id text not null default '', status text not null default 'completed', error text not null default '')");
   ctx.sqlite.execute("create table if not exists depth_jobs (job_id text primary key, action text not null, output_id text not null default '', started_at text not null, resolved_at text not null default '')");
@@ -58,7 +69,7 @@ function resolveTrackedJob(ctx, record, job) {
 function ensureNoActiveJob(ctx) {
   ensureSchema(ctx);
   const existing = trackedJob(ctx);
-  if (existing && isActiveJob(existing.status)) throw new Error("深度图已有任务正在执行，请等待完成或先取消。");
+  if (existing && isActiveJob(existing.status)) throw new Error(messages(ctx.locale).activeJobBusy);
   if (existing) ctx.sqlite.execute("update depth_jobs set resolved_at = ? where job_id = ?", [new Date().toISOString(), existing.id]);
 }
 
@@ -85,13 +96,13 @@ function trackedJob(ctx) {
   try { job = ctx.shell.status(record.job_id); }
   catch (error) {
     const message = error instanceof Error ? error.message : "shell job is unavailable";
-    const interrupted = { status: "interrupted", error: `任务记录不可恢复：${message}` };
+    const interrupted = { status: "interrupted", error: messages(ctx.locale).jobUnrecoverable(message) };
     settleOutput(ctx, record.output_id, interrupted);
     return { id: record.job_id, action: record.action, outputID: record.output_id, startedAt: record.started_at, status: interrupted.status, error: interrupted.error, logs: [] };
   }
   const status = shellJobStatus(job);
   if (!isActiveJob(status) && !isTerminalJob(status)) {
-    const interrupted = { status: "interrupted", error: `任务状态不可识别：${status || "empty"}` };
+    const interrupted = { status: "interrupted", error: messages(ctx.locale).jobStatusUnknown(status || "empty") };
     settleOutput(ctx, record.output_id, interrupted);
     return { id: record.job_id, action: record.action, outputID: record.output_id, startedAt: record.started_at, status: interrupted.status, error: interrupted.error, logs: [] };
   }
@@ -138,7 +149,7 @@ function generate(input, ctx) {
     ctx.sqlite.execute("update depth_outputs set job_id = ? where id = ?", [output.jobId, output.id]);
     return { job: tracked, output: { ...output, previewURL: "" } };
   } catch (error) {
-    ctx.sqlite.execute("update depth_outputs set status = 'failed', error = ? where id = ?", [error instanceof Error ? error.message : "无法启动深度任务。", output.id]);
+    ctx.sqlite.execute("update depth_outputs set status = 'failed', error = ? where id = ?", [error instanceof Error ? error.message : messages(ctx.locale).startFailed, output.id]);
     throw error;
   }
 }
@@ -149,7 +160,7 @@ function presentCompletedOutput(ctx, row) {
   const output = { id: row.id, assetId: row.asset_id, kind: row.kind, model: row.model, style: row.style, filePath: row.file_path, mimeType: row.mime_type, savedAssetId: row.saved_asset_id, createdAt: row.created_at };
   try { return present(output, ctx); }
   catch (error) {
-    ctx.sqlite.execute("update depth_outputs set status = 'failed', error = ? where id = ?", [error instanceof Error ? error.message : "深度预览文件已丢失。", output.id]);
+    ctx.sqlite.execute("update depth_outputs set status = 'failed', error = ? where id = ?", [error instanceof Error ? error.message : messages(ctx.locale).previewMissing, output.id]);
     return null;
   }
 }

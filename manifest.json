@@ -4,6 +4,12 @@
   "name": "深度图",
   "author": "Recut",
   "description": "在本机将图片或视频转换为可预览的深度图，再按需保存到素材库。",
+  "localized": {
+    "en": {
+      "name": "Depth Map",
+      "description": "Convert images or videos into previewable depth maps locally, and save them to the media library as needed."
+    }
+  },
   "repository": "https://github.com/6174/recut-depth-anything-v2",
   "version": "0.2.0",
   "type": "standalone",

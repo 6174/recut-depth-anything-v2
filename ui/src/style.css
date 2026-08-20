@@ -3,6 +3,7 @@
  * [OUTPUT]: 对外提供紧凑、可扫描的独立应用视觉样式，包括应用内选择组件、历史预览、任务停止和实时计时/日志底部标签页
  * [POS]: ui/src 的视觉边界；不承载状态、业务规则或宿主通信
  * [PROTOCOL]: 变更时更新此头部，然后检查 README.md
+ * 暗色模式：与 Recut 设计系统同源（dark-first 画布、品牌绿 oklch(0.68 0.18 151) 主命令、低圆角工具面），媒体保持原色。
  */
 :root { color: #1c2921; background: #f8faf8; font-family: Inter, "PingFang SC", system-ui, sans-serif; }
 * { box-sizing: border-box; }
@@ -109,3 +110,44 @@ code { border: 1px solid #dce2dd; border-radius: 3px; background: #f5f7f4; paddi
 .preview-dialog-media { display: grid; min-height: 260px; place-items: center; background: #161d18; padding: 18px; }
 .preview-dialog-media img, .preview-dialog-media video { display: block; max-width: 100%; max-height: min(68vh, 680px); object-fit: contain; }
 @media (max-width: 820px) { .app-shell { padding: 16px; } .workspace { grid-template-columns: 1fr; } .output-panel { min-height: 430px; } .output-panel footer { align-items: flex-start; flex-direction: column; } .primary-button.compact { width: 100%; } }
+
+/* Recut design-system dark surface: media stays true-color while tools recede into a quiet studio deck. */
+:root {
+  color-scheme: dark;
+  color: oklch(0.95 0.008 150);
+  background: oklch(0.145 0.012 150);
+}
+.eyebrow, .section-title span { color: oklch(0.82 0.15 151); }
+.app-header { border-color: oklch(0.32 0.014 150); }
+.app-header p:not(.eyebrow), .field-label, .app-select small, .source-preview span, .output-panel footer span, .empty, .history-header span, .history-grid span, .history-grid em, .empty-history, .status { color: oklch(0.78 0.012 150); }
+.icon-button, .controls, .output-panel, .bottom-panel, .setup, .preview-dialog { border-color: oklch(0.32 0.014 150); background: oklch(0.185 0.012 150); color: oklch(0.95 0.008 150); }
+.icon-button { background: oklch(0.225 0.012 150); color: oklch(0.93 0.01 150); }
+.app-select-trigger, .app-select-menu button, .secondary-button, .upload-control, .segmented button { border-color: oklch(0.3 0.014 150); background: oklch(0.2 0.012 150); color: oklch(0.93 0.01 150); }
+.segmented, .app-select-menu { border-color: oklch(0.32 0.014 150); background: oklch(0.205 0.014 150); box-shadow: 0 10px 24px oklch(0 0 0 / 0.35); }
+.app-select-trigger > svg { color: oklch(0.68 0.012 150); }
+.app-select-menu button:hover, .app-select-menu button[aria-selected="true"], .segmented button.selected { background: color-mix(in oklab, oklch(0.68 0.18 151) 16%, oklch(0.185 0.012 150)); }
+.app-select-menu button[aria-selected="true"] strong, .segmented button.selected, .model-ready, .saved-copy, .text-button, .link-button, .history-grid em { color: oklch(0.82 0.15 151); }
+.source-preview { border-color: oklch(0.32 0.014 150); background: oklch(0.16 0.01 150); }
+.source-preview > div, .thumb { background: oklch(0.22 0.014 150); }
+.output-panel header, .history-header { border-color: oklch(0.32 0.014 150); }
+.output-panel footer { border-color: oklch(0.32 0.014 150); }
+.private-pill { background: oklch(0.3 0.07 82); color: oklch(0.88 0.12 82); }
+.saved-pill { background: oklch(0.26 0.07 151); color: oklch(0.86 0.12 151); }
+.preview { background: oklch(0.12 0.008 150); }
+.preview img, .preview video { border-color: oklch(0.32 0.014 150); }
+.bottom-tabs { border-color: oklch(0.32 0.014 150); background: oklch(0.17 0.01 150); }
+.bottom-tabs button { color: oklch(0.78 0.012 150); }
+.bottom-tabs button[aria-selected="true"] { border-bottom-color: oklch(0.62 0.18 151); color: oklch(0.85 0.15 151); }
+.bottom-tabs button span { background: oklch(0.25 0.014 150); color: oklch(0.82 0.012 150); }
+.bottom-tabs .cancel-job { border-color: oklch(0.5 0.12 28); color: oklch(0.78 0.12 28); }
+.bottom-tabs .cancel-job:hover { background: oklch(0.26 0.05 28); }
+.history article { border-color: oklch(0.3 0.014 150); }
+.history-card:hover, .history-card:focus-visible { border-color: oklch(0.52 0.14 151); box-shadow: 0 5px 14px oklch(0 0 0 / 0.28); }
+.setup-mark { border-color: oklch(0.42 0.07 82); background: oklch(0.26 0.06 82); color: oklch(0.88 0.14 82); }
+.setup > p:not(.eyebrow):not(.status) { color: oklch(0.82 0.012 150); }
+code { border-color: oklch(0.32 0.014 150); background: oklch(0.17 0.01 150); color: oklch(0.9 0.01 150); }
+.job-log { background: oklch(0.12 0.008 150); color: oklch(0.88 0.02 150); }
+.error-box { border-color: oklch(0.5 0.13 28); background: oklch(0.24 0.05 28); color: oklch(0.86 0.1 28); }
+.preview-dialog-backdrop { background: oklch(0 0 0 / 0.68); }
+.preview-dialog header { border-color: oklch(0.32 0.014 150); }
+.job-timer { color: oklch(0.75 0.14 151); }
